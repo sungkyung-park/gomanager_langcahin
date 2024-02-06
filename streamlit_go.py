@@ -44,7 +44,7 @@ def main():
 
     with st.sidebar:
         uploaded_files =  st.file_uploader("Upload file",type=['pdf','docx'],accept_multiple_files=True)
-        openai_api_key = st.text_input("OpenAI API Key", key="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", type="password")
+        openai_api_key = st.text_input("OpenAI API Key", key=chatbot_key", type="password")
         process = st.button("Process")
     if process:
         if not openai_api_key:
