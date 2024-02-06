@@ -1,5 +1,6 @@
 import streamlit as st
 import tiktoken
+import openai
 from loguru import logger
 
 from langchain.chains import ConversationalRetrievalChain
@@ -26,6 +27,8 @@ from langchain.prompts.chat import (
 )
 
 
+openai.api_key = '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'
+
 def main():
     st.set_page_config(
     page_title="Go_manager",
@@ -44,18 +47,13 @@ def main():
 
     with st.sidebar:
         uploaded_files =  st.file_uploader("Upload file",type=['pdf','docx'],accept_multiple_files=True)
-        openai_api_key = st.text_input("OpenAI API Key", key=chatbot_key", type="password")
         process = st.button("Process")
     if process:
-        if not openai_api_key:
-            st.info("Please add your OpenAI API key to continue.")
-            st.stop()
         files_text = get_text(uploaded_files)
         text_chunks = get_text_chunks(files_text)
         vetorestore = get_vectorstore(text_chunks)
      
         st.session_state.conversation = get_conversation_chain(vetorestore,openai_api_key) 
-
         st.session_state.processComplete = True
 
     if 'messages' not in st.session_state:
@@ -69,7 +67,7 @@ def main():
     history = StreamlitChatMessageHistory(key="chat_messages")
 
     # Chat logic
-    if query := st.chat_input("질문을 입력해주세요."):
+    if query := st.chat_input("고혈압관련 질문을 입력해주세요."):
         st.session_state.messages.append({"role": "user", "content": query})
 
         with st.chat_message("user"):
