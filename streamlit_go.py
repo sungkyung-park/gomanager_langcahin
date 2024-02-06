@@ -26,7 +26,6 @@ from langchain.prompts.chat import (
 )
 
 
-
 def main():
     st.set_page_config(
     page_title="Go_manager",
@@ -43,17 +42,19 @@ def main():
     if "processComplete" not in st.session_state:
         st.session_state.processComplete = None
 
-    client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-    
     with st.sidebar:
         uploaded_files =  st.file_uploader("Upload file",type=['pdf','docx'],accept_multiple_files=True)
+        openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
         process = st.button("Process")
     if process:
+        if not openai_api_key:
+            st.info("Please add your OpenAI API key to continue.")
+            st.stop()
         files_text = get_text(uploaded_files)
         text_chunks = get_text_chunks(files_text)
         vetorestore = get_vectorstore(text_chunks)
 
-        st.session_state.conversation = get_conversation_chain(vetorestore) 
+        st.session_state.conversation = get_conversation_chain(vetorestore,openai_api_key) 
 
         st.session_state.processComplete = True
 
@@ -68,7 +69,7 @@ def main():
     history = StreamlitChatMessageHistory(key="chat_messages")
 
     # Chat logic
-    if query := st.chat_input("고혈압관련 질문을 입력해주세요."):
+    if query := st.chat_input("질문을 입력해주세요."):
         st.session_state.messages.append({"role": "user", "content": query})
 
         with st.chat_message("user"):
@@ -162,6 +163,7 @@ def get_conversation_chain(vetorestore,openai_api_key):
             get_chat_history=lambda h: h,
             return_source_documents=True,
             combine_docs_chain_kwargs={"prompt":qa_prompt}
+            verbose = True
         )
 
     return conversation_chain
