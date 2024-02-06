@@ -144,7 +144,7 @@ def get_vectorstore(text_chunks):
     return vectordb
 
 # Define the system message template
-system_template = """너는 context에서만 user의 질문에 대한 답변을 하고, 만약 user의 질문에 대한 답변을 찾지 못했을 때는 답변을 만들어내려고 하지마.----------------{context}"""
+system_template = """항상 존댓말을 사용해. 너는 context에서만 user의 질문에 대한 답변을 하고, 만약 user의 질문에 대한 답변을 찾지 못했을 때는 답변을 만들어내려고 하지마.----------------{context}"""
 # Create the chat prompt templates
 messages = [
 SystemMessagePromptTemplate.from_template(system_template),
@@ -154,7 +154,7 @@ qa_prompt = ChatPromptTemplate.from_messages(messages)
 
 
 def get_conversation_chain(vetorestore,openai_api_key):
-    llm = ChatOpenAI(openai_api_key=openai_api_key, model_name = 'gpt-3.5-turbo-1106',temperature=0)
+    llm = ChatOpenAI(openai_api_key=openai_api_key, model_name = 'gpt-3.5-turbo',temperature=0.7)
     conversation_chain = ConversationalRetrievalChain.from_llm(
             llm=llm, 
             chain_type="stuff", 
