@@ -39,7 +39,7 @@ def main():
     st.title("_당신의 혈압관리 도우미 :red[Go_manager]_ :robot_face:")
 
 # Set OpenAI API key from Streamlit secrets
-client = OpenAI(api_key=st.secrets["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"])
+    client = OpenAI(api_key=st.secrets["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"])
     
     if "conversation" not in st.session_state:
         st.session_state.conversation = None
