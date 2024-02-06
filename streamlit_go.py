@@ -1,6 +1,6 @@
 import streamlit as st
 import tiktoken
-import openai
+from openai import OpenAI
 from loguru import logger
 
 from langchain.chains import ConversationalRetrievalChain
@@ -26,9 +26,10 @@ from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 
+# .streamlit/secrets.toml
+OPENAI_API_KEY = "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"
 
-openai.api_key = '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'
-openai_api_key=openai.api_key 
+
 
 def main():
     st.set_page_config(
@@ -37,6 +38,9 @@ def main():
 
     st.title("_당신의 혈압관리 도우미 :red[Go_manager]_ :robot_face:")
 
+# Set OpenAI API key from Streamlit secrets
+client = OpenAI(api_key=st.secrets["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"])
+    
     if "conversation" not in st.session_state:
         st.session_state.conversation = None
 
@@ -53,8 +57,9 @@ def main():
         files_text = get_text(uploaded_files)
         text_chunks = get_text_chunks(files_text)
         vetorestore = get_vectorstore(text_chunks)
-     
-        st.session_state.conversation = get_conversation_chain(vetorestore,openai_api_key) 
+
+        st.session_state.conversation = get_conversation_chain(vetorestore) 
+
         st.session_state.processComplete = True
 
     if 'messages' not in st.session_state:
@@ -68,7 +73,7 @@ def main():
     history = StreamlitChatMessageHistory(key="chat_messages")
 
     # Chat logic
-    if query := st.chat_input("고혈압관련 질문을 입력해주세요."):
+    if query := st.chat_input("질문을 입력해주세요."):
         st.session_state.messages.append({"role": "user", "content": query})
 
         with st.chat_message("user"):
@@ -89,7 +94,7 @@ def main():
                     st.markdown(source_documents[0].metadata['source'], help = source_documents[0].page_content)
                     st.markdown(source_documents[1].metadata['source'], help = source_documents[1].page_content)
                     st.markdown(source_documents[2].metadata['source'], help = source_documents[2].page_content)
-                    
+
 
 
 # Add assistant message to chat history
@@ -103,7 +108,7 @@ def tiktoken_len(text):
 def get_text(docs):
 
     doc_list = []
-    
+
     for doc in docs:
         file_name = doc.name  # doc 객체의 이름을 파일 이름으로 사용
         with open(file_name, "wb") as file:  # 파일을 doc.name으로 저장
@@ -143,14 +148,8 @@ def get_vectorstore(text_chunks):
     return vectordb
 
 # Define the system message template
-
-system_template = """반드시 다음 문제를 제시하는 순서에 따라 문제를 풀어줘.
-```
-#1. 환자 증상을 분석해.
-#2. 검사 결과 중에서 정상 범위에서 벗어난 수치 확인해.
-#3. 가능성이 있는 질환을 구체적으로 제시해. (단순히 고혈압 X)
-#4. 각 보기 전부를 매우 매우 매우 자세하게 설명해줘. 반드시 위에서 제시한 질환과 관련해서 설명해줘. 
-#5. 증상과 검사 결과를 바탕으로 보기에서 가장 적절한 답을 찾아 답변해.```{context}"""
+system_template = """너는 context에서만 user의 질문에 대한 답변을 하고, 만약 user의 질문에 대한 답변을 찾지 못했을 때는 답변을 만들어내려고 하지마.
+----------------{context}"""
 # Create the chat prompt templates
 messages = [
 SystemMessagePromptTemplate.from_template(system_template),
@@ -169,6 +168,7 @@ def get_conversation_chain(vetorestore,openai_api_key):
             get_chat_history=lambda h: h,
             return_source_documents=True,
             combine_docs_chain_kwargs={"prompt":qa_prompt}
+            verbose = True
         )
 
     return conversation_chain
