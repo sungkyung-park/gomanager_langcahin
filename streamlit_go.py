@@ -25,6 +25,7 @@ from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 
+openai.api_key = "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"
 
 def main():
     st.set_page_config(
@@ -44,23 +45,23 @@ def main():
 
     with st.sidebar:
         uploaded_files =  st.file_uploader("Upload file",type=['pdf','docx'],accept_multiple_files=True)
-        openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
+        #openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
         process = st.button("Process")
     if process:
-        if not openai_api_key:
-            st.info("Please add your OpenAI API key to continue.")
-            st.stop()
+        #if not openai_api_key:
+            #st.info("Please add your OpenAI API key to continue.")
+            #st.stop()
         files_text = get_text(uploaded_files)
         text_chunks = get_text_chunks(files_text)
         vetorestore = get_vectorstore(text_chunks)
      
-        st.session_state.conversation = get_conversation_chain(vetorestore,openai_api_key) 
+        st.session_state.conversation = get_conversation_chain(vetorestore) #,openai_api_key
 
         st.session_state.processComplete = True
 
     if 'messages' not in st.session_state:
         st.session_state['messages'] = [{"role": "assistant", 
-                                        "content": "안녕하세요! 고혈압 관리에 대해 궁금하신 것이 있으면 언제든 물어봐주세요!"}]
+                                        "content": "안녕하세요! 고혈압 관리에 대해 궁금하신 것이 있으면 무엇이든 물어봐주세요!"}]
 
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
@@ -127,7 +128,7 @@ def get_text(docs):
 def get_text_chunks(text):
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=500,
-        chunk_overlap=100,
+        chunk_overlap=50,
         length_function=tiktoken_len
     )
     chunks = text_splitter.split_documents(text)
@@ -144,9 +145,13 @@ def get_vectorstore(text_chunks):
     return vectordb
 
 # Define the system message template
-system_template = """모든 대답에 "진단 및 치료 방법에 대해서는 전문의에게 상담하시기 바랍니다."라고 답해. 
-너는 context에서만 user의 질문에 대한 답변을 하고, 만약 user의 질문에 대한 답변을 찾지 못했을 때는 답변을 만들어내려고 하지마.
-----------------{context}"""
+system_template = """반드시 다음 문제를 제시하는 순서에 따라 문제를 풀어줘.
+```
+#1. 환자 증상을 분석해.
+#2. 검사 결과 중에서 정상 범위에서 벗어난 수치 확인해.
+#3. 가능성이 있는 질환을 구체적으로 제시해. (단순히 고혈압 X)
+#4. 각 보기 전부를 매우 매우 매우 자세하게 설명해줘. 반드시 위에서 제시한 질환과 관련해서 설명해줘. 
+#5. 증상과 검사 결과를 바탕으로 보기에서 가장 적절한 답을 찾아 답변해.```{context}"""
 # Create the chat prompt templates
 messages = [
 SystemMessagePromptTemplate.from_template(system_template),
@@ -165,6 +170,7 @@ def get_conversation_chain(vetorestore,openai_api_key):
             get_chat_history=lambda h: h,
             return_source_documents=True,
             combine_docs_chain_kwargs={"prompt":qa_prompt}
+            verbose = True
         )
 
     return conversation_chain
