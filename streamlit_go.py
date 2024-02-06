@@ -144,11 +144,6 @@ def get_vectorstore(text_chunks):
     return vectordb
 
 # Define the system message template
-"""
-system_template = 모든 대답에 "진단 및 치료 방법에 대해서는 전문의에게 상담하시기 바랍니다."라고 답해. 
-너는 context에서만 user의 질문에 대한 답변을 하고, 만약 user의 질문에 대한 답변을 찾지 못했을 때는 답변을 만들어내려고 하지마.
-----------------{context}
-"""
 
 system_template = """반드시 다음 문제를 제시하는 순서에 따라 문제를 풀어줘.
 ```
