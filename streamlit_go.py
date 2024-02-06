@@ -1,9 +1,10 @@
 import streamlit as st
 import tiktoken
-import openai
 from loguru import logger
 
 from langchain.chains import ConversationalRetrievalChain
+from langchain.chains import RetrievalQA
+from langchain.retrievers import BM25Retriever, EnsembleRetriever
 from langchain.chat_models import ChatOpenAI
 
 from langchain.document_loaders import PyPDFLoader
@@ -26,7 +27,6 @@ from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 
-openai.api_key = "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"
 
 def main():
     st.set_page_config(
@@ -46,17 +46,17 @@ def main():
 
     with st.sidebar:
         uploaded_files =  st.file_uploader("Upload file",type=['pdf','docx'],accept_multiple_files=True)
-        #openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
+        openai_api_key = st.text_input("OpenAI API Key", key="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", type="password")
         process = st.button("Process")
     if process:
-        #if not openai_api_key:
-            #st.info("Please add your OpenAI API key to continue.")
-            #st.stop()
+        if not openai_api_key:
+            st.info("Please add your OpenAI API key to continue.")
+            st.stop()
         files_text = get_text(uploaded_files)
         text_chunks = get_text_chunks(files_text)
         vetorestore = get_vectorstore(text_chunks)
      
-        st.session_state.conversation = get_conversation_chain(vetorestore) #,openai_api_key
+        st.session_state.conversation = get_conversation_chain(vetorestore,openai_api_key)
 
         st.session_state.processComplete = True
 
@@ -71,7 +71,7 @@ def main():
     history = StreamlitChatMessageHistory(key="chat_messages")
 
     # Chat logic
-    if query := st.chat_input("질문을 입력해주세요."):
+    if query := st.chat_input("고혈압관련 질문을 입력해주세요."):
         st.session_state.messages.append({"role": "user", "content": query})
 
         with st.chat_message("user"):
@@ -160,20 +160,35 @@ HumanMessagePromptTemplate.from_template("{question}")
 ]
 qa_prompt = ChatPromptTemplate.from_messages(messages)
 
+# initialize the bm25 retriever and faiss retriever
+bm25_retriever = BM25Retriever.from_documents(texts)
+bm25_retriever.k = 2
 
-def get_conversation_chain(vetorestore,openai_api_key):
-    llm = ChatOpenAI(openai_api_key=openai_api_key, model_name = 'gpt-3.5-turbo-1106',temperature=0)
-    conversation_chain = ConversationalRetrievalChain.from_llm(
+
+
+embedding = ko_embedding
+faiss_vectorstore = FAISS.from_documents(texts, ko_embedding)
+faiss_retriever = faiss_vectorstore.as_retriever(search_kwargs={"k": 2})
+
+# initialize the ensemble retriever
+ensemble_retriever = EnsembleRetriever(
+    retrievers=[bm25_retriever, faiss_retriever], weights=[0.5, 0.5]
+)
+
+
+def get_RetrievalQA_chain(vetorestore,openai_api_key):
+    llm = ChatOpenAI(openai_api_key=openai_api_key, model_name = 'gpt-3.5-turbo',temperature=0.7)
+    RetrievalQA_chain = RetrievalQA.from_chain_type(
             llm=llm, 
             chain_type="stuff", 
-            retriever=vetorestore.as_retriever(search_type = 'similarity', vervose = True), 
+            retriever=ensemble_retriever, 
             memory=ConversationBufferMemory(memory_key='chat_history', return_messages=True, output_key='answer'),
             get_chat_history=lambda h: h,
             return_source_documents=True,
             combine_docs_chain_kwargs={"prompt":qa_prompt}
         )
 
-    return conversation_chain
+    return RetrievalQA_chain
 
 
 
