@@ -25,6 +25,7 @@ from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 def main():
     st.set_page_config(
@@ -32,8 +33,7 @@ def main():
     page_icon=":robot_face:")
 
     st.title("_당신의 혈압관리 도우미 :red[Go_manager]_ :robot_face:")
-    client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-    
+
     if "conversation" not in st.session_state:
         st.session_state.conversation = None
 
