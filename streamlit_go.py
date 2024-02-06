@@ -69,7 +69,7 @@ def main():
     history = StreamlitChatMessageHistory(key="chat_messages")
 
     # Chat logic
-    if query := st.chat_input("질문을 입력해주세요."):
+    if query := st.chat_input("고혈압 관련 질문을 입력해주세요."):
         st.session_state.messages.append({"role": "user", "content": query})
 
         with st.chat_message("user"):
@@ -87,9 +87,9 @@ def main():
 
                 st.markdown(response)
                 with st.expander("참고 문서 확인"):
-                    st.markdown(source_documents[0].metadata['source'], help = source_documents[0].page_content)
-                    st.markdown(source_documents[1].metadata['source'], help = source_documents[1].page_content)
-                    st.markdown(source_documents[2].metadata['source'], help = source_documents[2].page_content)
+                    st.markdown(source_documents[0].metadata['source'])
+                    st.markdown(source_documents[1].metadata['source'])
+                    st.markdown(source_documents[2].metadata['source'])
 
 
 
