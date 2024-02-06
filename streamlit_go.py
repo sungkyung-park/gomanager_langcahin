@@ -170,7 +170,6 @@ def get_conversation_chain(vetorestore,openai_api_key):
             get_chat_history=lambda h: h,
             return_source_documents=True,
             combine_docs_chain_kwargs={"prompt":qa_prompt}
-            verbose = True
         )
 
     return conversation_chain
