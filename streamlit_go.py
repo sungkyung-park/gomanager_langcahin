@@ -25,7 +25,7 @@ from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
 )
 
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
 
 def main():
     st.set_page_config(
@@ -43,19 +43,17 @@ def main():
     if "processComplete" not in st.session_state:
         st.session_state.processComplete = None
 
+    client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+    
     with st.sidebar:
         uploaded_files =  st.file_uploader("Upload file",type=['pdf','docx'],accept_multiple_files=True)
-        openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
         process = st.button("Process")
     if process:
-        if not openai_api_key:
-            st.info("Please add your OpenAI API key to continue.")
-            st.stop()
         files_text = get_text(uploaded_files)
         text_chunks = get_text_chunks(files_text)
         vetorestore = get_vectorstore(text_chunks)
 
-        st.session_state.conversation = get_conversation_chain(vetorestore,openai_api_key) 
+        st.session_state.conversation = get_conversation_chain(vetorestore) 
 
         st.session_state.processComplete = True
 
