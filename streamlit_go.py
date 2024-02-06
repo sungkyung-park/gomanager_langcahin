@@ -28,6 +28,7 @@ from langchain.prompts.chat import (
 
 
 openai.api_key = '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'
+openai_api_key=openai.api_key 
 
 def main():
     st.set_page_config(
